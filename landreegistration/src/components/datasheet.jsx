@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./datasheetstyle.css";
+import "./datasheet.css";
 import Web3 from "web3";
 import $ from "jquery";
 
