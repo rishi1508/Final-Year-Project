@@ -1,27 +1,23 @@
-import React, { useState } from 'react';
-import { Menu, Search } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { Menu, Search, X } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/Table';
 
-const LandRecordSearch = () => {
+const Khatiyan = ({ web3Instance }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [submenuStates, setSubmenuStates] = useState({
     register: false,
     settings: false
   });
-  const [searchData, setSearchData] = useState({
+  const [plotNumber, setPlotNumber] = useState('');
+  const [currentOwner, setCurrentOwner] = useState({
     name: '',
-    gender: '',
-    address: '',
-    phone: '',
-    location: '',
-    district: '',
-    plotNo: '',
-    area: '',
-    assetValue: ''
+    location: ''
   });
+  const [vendors, setVendors] = useState([]);
+  const [showResults, setShowResults] = useState(false);
 
   const toggleSubmenu = (menu) => {
     setSubmenuStates(prev => ({
@@ -30,25 +26,54 @@ const LandRecordSearch = () => {
     }));
   };
 
-  const handleSearch = async () => {
-    // Mock data for demonstration - replace with actual Web3 calls
-    setSearchData({
-      name: 'John Doe',
-      gender: 'Male',
-      address: '123 Main St',
-      phone: '555-0123',
-      location: 'Downtown',
-      district: 'Central',
-      plotNo: 'A123',
-      area: '1000',
-      assetValue: '500000'
-    });
-    setIsSearchVisible(true);
+  const fetchVendorList = async () => {
+    if (!web3Instance || !plotNumber) return;
+
+    try {
+      setShowResults(true);
+      
+      //  contract instance
+      const contract = web3Instance.contract;
+      const khatiyanData = await contract.methods.get_khatiyan(plotNumber).call();
+      
+      const vendorAddresses = khatiyanData[0];
+      const totalVendors = khatiyanData[1];
+      
+      // Current owner details
+      const currentOwnerAddress = vendorAddresses[totalVendors - 1];
+      const currentOwnerData = await contract.methods.get_user(currentOwnerAddress).call();
+      setCurrentOwner({
+        name: currentOwnerData[0],
+        location: currentOwnerData[2]
+      });
+
+      // Fetching all vendors details
+      const vendorPromises = vendorAddresses
+        .slice(0, totalVendors)
+        .reverse()
+        .map(async (address, index) => {
+          const userData = await contract.methods.get_user(address).call();
+          return {
+            id: totalVendors - index,
+            name: userData[0]
+          };
+        });
+
+      const vendorList = await Promise.all(vendorPromises);
+      setVendors(vendorList);
+    } catch (error) {
+      console.error('Error fetching vendor list:', error);
+      
+    }
   };
+
+  useEffect(() => {
+    // Fetch vendor list logic here
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Menu  */}
+      {/* Menu Button */}
       <button 
         onClick={() => setIsSidebarOpen(true)}
         className={`fixed top-4 left-4 p-2 ${isSidebarOpen ? 'hidden' : 'block'}`}
@@ -64,7 +89,7 @@ const LandRecordSearch = () => {
           onClick={() => setIsSidebarOpen(false)}
           className="absolute top-4 right-4"
         >
-          ×
+          <X className="h-6 w-6" />
         </button>
 
         <nav className="p-4 mt-8">
@@ -128,77 +153,63 @@ const LandRecordSearch = () => {
       <main className={`p-6 ${isSidebarOpen ? 'ml-64' : ''} transition-margin duration-300`}>
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-center">Search your Land Record</CardTitle>
+            <CardTitle className="text-center">Vendor List</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
               <fieldset className="border rounded-md p-4">
-                <legend className="text-center px-2">Land Record (Register II)</legend>
+                <legend className="text-center px-2">Plot Information</legend>
                 <Input
                   type="text"
-                  placeholder="Enter Account Number"
+                  placeholder="Enter the plot number"
+                  value={plotNumber}
+                  onChange={(e) => setPlotNumber(e.target.value)}
                   className="w-full"
                 />
+                <Button 
+                  onClick={fetchVendorList}
+                  className="w-full mt-4"
+                >
+                  Click to show the vendor list
+                </Button>
               </fieldset>
-              
-              <Button 
-                onClick={handleSearch}
-                className="w-full"
-              >
-                Search
-              </Button>
 
-              {isSearchVisible && (
-                <div className="mt-8 space-y-6">
-                  <h2 className="text-xl font-semibold text-center underline">Land Details</h2>
-                  
-                  <div>
-                    <h3 className="font-bold text-green-800 mb-2">Personal Detail</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Name:</span>
-                        <span>{searchData.name}</span>
+              {showResults && (
+                <div className="space-y-6">
+                  <div className="bg-white p-4 rounded-lg shadow">
+                    <h2 className="text-xl font-bold text-center mb-4">Current Owner</h2>
+                    <div className="space-y-2">
+                      <div>
+                        <h3 className="font-semibold">Plot No.</h3>
+                        <p className="text-red-600 font-bold">{plotNumber}</p>
                       </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Gender:</span>
-                        <span>{searchData.gender}</span>
+                      <div>
+                        <h3 className="font-semibold">Name</h3>
+                        <p>{currentOwner.name}</p>
                       </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Address:</span>
-                        <span>{searchData.address}</span>
-                      </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Phone:</span>
-                        <span>{searchData.phone}</span>
+                      <div>
+                        <h3 className="font-semibold">Location</h3>
+                        <p>{currentOwner.location}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="font-bold text-green-800 mb-2">Property Detail</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Land Location:</span>
-                        <span>{searchData.location}</span>
-                      </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">District:</span>
-                        <span>{searchData.district}</span>
-                      </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Plot No:</span>
-                        <span>{searchData.plotNo}</span>
-                      </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Area:</span>
-                        <span>{searchData.area} (sqft)</span>
-                      </div>
-                      <div className="grid grid-cols-2">
-                        <span className="font-semibold">Asset Value:</span>
-                        <span className="text-red-600">₹{searchData.assetValue}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vendor Details</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vendors.map((vendor) => (
+                        <TableRow key={vendor.id}>
+                          <TableCell>
+                            Vendor: {vendor.id} - {vendor.name}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </form>
@@ -209,4 +220,4 @@ const LandRecordSearch = () => {
   );
 };
 
-export default LandRecordSearch;
+export default Khatiyan;
