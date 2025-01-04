@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './style.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes, faDesktop, faTable, faTh, faInfoCircle, faCogs, faAngleRight } from '@fortawesome/free-solid-svg-icons';
 

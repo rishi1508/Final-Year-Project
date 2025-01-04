@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import "./datasheet.css";
+import "./components/css/datasheet.css"; 
 import Web3 from "web3";
 import $ from "jquery";
+import init from "./components/init"; 
 
 const SidebarMenu = () => {
   const [tableData, setTableData] = useState([]);
@@ -17,7 +18,7 @@ const SidebarMenu = () => {
   const fetchAccountData = async (account) => {
     let storage = await init(); // Ensure 'init' is defined elsewhere and returns the contract instance.
     const user = await storage.methods.get_user(account).call();
-    const asset = await storage.methods.get_asset(account).call();
+    // const asset = await storage.methods.get_asset(account).call();
 
     if (user[0] === "Not Found") return;
 
@@ -25,16 +26,10 @@ const SidebarMenu = () => {
       account,
       name: user[0],
       gender: user[1],
-      address: user[2],
-      phone: user[3],
-      location: asset[0],
-      district: asset[1],
-      plotNo: asset[2],
-      area: asset[3],
-      assetValue: asset[4],
+      // Add other fields as needed
     };
 
-    setTableData((prevData) => [newData, ...prevData]);
+    setTableData((prevData) => [...prevData, newData]);
   };
 
   const displayRecords = () => {
@@ -173,6 +168,8 @@ const SidebarMenu = () => {
                 </div>
               )}
             </form>
+            <a href="https://example.com">Valid Link</a>
+            <button onClick={() => console.log('Button clicked')}>Button</button>
           </section>
         </div>
       </section>
