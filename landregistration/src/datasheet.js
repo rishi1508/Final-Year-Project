@@ -67,7 +67,7 @@ const SidebarMenu = () => {
         </div>
         <div className="menu">
           <div className="item">
-            <a href="#">
+            <a href="/dashboard">
               <i className="fas fa-desktop"></i>Dashboard
             </a>
           </div>
@@ -77,38 +77,38 @@ const SidebarMenu = () => {
               <i className="fas fa-angle-right dropdown"></i>
             </a>
             <div className="sub-menu">
-              <a href="#" className="sub-item">Users</a>
-              <a href="#" className="sub-item">Assets</a>
+              <a href="/users" className="sub-item">Users</a>
+              <a href="/assets" className="sub-item">Assets</a>
             </div>
           </div>
           <div className="item">
-            <a href="search.html">
+            <a href="/search">
               <i className="fas fa-th"></i>Search
             </a>
           </div>
           <div className="item">
-            <a href="Mutation.html">
+            <a href="/mutation">
               <i className="fa fa-clipboard"></i>Mutation
             </a>
           </div>
           <div className="item">
-            <a href="datasheet.html">
+            <a href="/records">
               <i className="fa fa-database"></i>Records
             </a>
           </div>
           <div className="item">
-            <a href="Khatiyan.html">
+            <a href="/khatiyan">
               <i className="fa fa-database"></i>Vendor list
             </a>
           </div>
           <div className="item">
-            <a className="sub-btn">
+            <a className="sub-btn" href="/settings">
               <i className="fas fa-cogs"></i>Settings
               <i className="fas fa-angle-right dropdown"></i>
             </a>
             <div className="sub-menu">
-              <a href="#" className="sub-item">User Profile</a>
-              <a href="#" className="sub-item">Land Data</a>
+              <a href="user-profile" className="sub-item">User Profile</a>
+              <a href="land-data" className="sub-item">Land Data</a>
             </div>
           </div>
         </div>
