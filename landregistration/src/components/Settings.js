@@ -21,7 +21,7 @@ const SidebarMenu = () => {
         </div>
         <div className="menu">
           <div className="item">
-            <a href="#"><FontAwesomeIcon icon={faDesktop} />Dashboard</a>
+            <a href="/dashboard"><FontAwesomeIcon icon={faDesktop} />Dashboard</a>
           </div>
           <div className="item">
             <div className="sub-btn" onClick={() => handleSubMenuToggle('register')}>
@@ -29,15 +29,15 @@ const SidebarMenu = () => {
               <FontAwesomeIcon icon={faAngleRight} className={`dropdown ${openSubMenu === 'register' ? 'rotate' : ''}`} />
             </div>
             <div className={`sub-menu ${openSubMenu === 'register' ? 'active' : ''}`}>
-              <a href="#" className="sub-item">Users</a>
-              <a href="#" className="sub-item">Assets</a>
+              <a href="/users" className="sub-item">Users</a>
+              <a href="/assets" className="sub-item">Assets</a>
             </div>
           </div>
           <div className="item">
-            <a href="#"><FontAwesomeIcon icon={faTh} />Search</a>
+            <a href="/search"><FontAwesomeIcon icon={faTh} />Search</a>
           </div>
           <div className="item">
-            <a href="#"><FontAwesomeIcon icon={faInfoCircle} />Mutation</a>
+            <a href="/mutation"><FontAwesomeIcon icon={faInfoCircle} />Mutation</a>
           </div>
           <div className="item">
             <div className="sub-btn" onClick={() => handleSubMenuToggle('settings')}>
@@ -45,8 +45,8 @@ const SidebarMenu = () => {
               <FontAwesomeIcon icon={faAngleRight} className={`dropdown ${openSubMenu === 'settings' ? 'rotate' : ''}`} />
             </div>
             <div className={`sub-menu ${openSubMenu === 'settings' ? 'active' : ''}`}>
-              <a href="#" className="sub-item">User Profile</a>
-              <a href="#" className="sub-item">Land Data</a>
+              <a href="/user-profile" className="sub-item">User Profile</a>
+              <a href="/land-data" className="sub-item">Land Data</a>
             </div>
           </div>
         </div>

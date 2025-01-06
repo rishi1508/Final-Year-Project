@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -94,7 +94,7 @@ const Khatiyan = ({ web3Instance }) => {
 
         <nav className="p-4 mt-8">
           <div className="space-y-4">
-            <a href="#" className="flex items-center p-2 hover:bg-gray-100 rounded">
+            <a href="/dashboard" className="flex items-center p-2 hover:bg-gray-100 rounded">
               <span>Dashboard</span>
             </a>
             
@@ -108,25 +108,25 @@ const Khatiyan = ({ web3Instance }) => {
               </button>
               {submenuStates.register && (
                 <div className="ml-4 space-y-2">
-                  <a href="#" className="block p-2 hover:bg-gray-100 rounded">Users</a>
-                  <a href="#" className="block p-2 hover:bg-gray-100 rounded">Assets</a>
+                  <a href="/users" className="block p-2 hover:bg-gray-100 rounded">Users</a>
+                  <a href="/assets" className="block p-2 hover:bg-gray-100 rounded">Assets</a>
                 </div>
               )}
             </div>
 
-            <a href="#" className="flex items-center p-2 hover:bg-gray-100 rounded">
+            <a href="/search" className="flex items-center p-2 hover:bg-gray-100 rounded">
               <span>Search</span>
             </a>
             
-            <a href="#" className="flex items-center p-2 hover:bg-gray-100 rounded">
+            <a href="/mutation" className="flex items-center p-2 hover:bg-gray-100 rounded">
               <span>Mutation</span>
             </a>
 
-            <a href="#" className="flex items-center p-2 hover:bg-gray-100 rounded">
+            <a href="/records" className="flex items-center p-2 hover:bg-gray-100 rounded">
               <span>Records</span>
             </a>
 
-            <a href="#" className="flex items-center p-2 hover:bg-gray-100 rounded">
+            <a href="/vendor-list" className="flex items-center p-2 hover:bg-gray-100 rounded">
               <span>Vendor List</span>
             </a>
 
@@ -140,8 +140,8 @@ const Khatiyan = ({ web3Instance }) => {
               </button>
               {submenuStates.settings && (
                 <div className="ml-4 space-y-2">
-                  <a href="#" className="block p-2 hover:bg-gray-100 rounded">User Profile</a>
-                  <a href="#" className="block p-2 hover:bg-gray-100 rounded">Land Data</a>
+                  <a href="/user-profile" className="block p-2 hover:bg-gray-100 rounded">User Profile</a>
+                  <a href="/land-data" className="block p-2 hover:bg-gray-100 rounded">Land Data</a>
                 </div>
               )}
             </div>
