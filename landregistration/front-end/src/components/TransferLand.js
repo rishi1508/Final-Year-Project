@@ -1,36 +1,40 @@
 import React, { useState } from 'react';
+import web3 from '../web3';
+import LandRegistry from '../contracts/LandRegistry.json';
 
-const TransferLand = ({ landRegistry, account }) => {
+const TransferLand = () => {
   const [landId, setLandId] = useState('');
-  const [newOwner, setNewOwner] = useState('');
+  const [to, setTo] = useState('');
+  const [message, setMessage] = useState('');
 
   const transferLand = async (event) => {
     event.preventDefault();
-    await landRegistry.methods.transferLand(landId, newOwner).send({ from: account });
-    setLandId('');
-    setNewOwner('');
+
+    const accounts = await web3.eth.getAccounts();
+    const contract = new web3.eth.Contract(LandRegistry.abi, '0x577893A395a731aa549fa54Ac2146229312C6848');
+
+    setMessage('Transferring land...');
+
+    await contract.methods.transferLand(landId, to).send({ from: accounts[0] });
+
+    setMessage('Land transferred successfully!');
   };
 
   return (
     <div>
       <h2>Transfer Land</h2>
       <form onSubmit={transferLand}>
-        <input
-          type="number"
-          placeholder="Land ID"
-          value={landId}
-          onChange={(e) => setLandId(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="New Owner Address"
-          value={newOwner}
-          onChange={(e) => setNewOwner(e.target.value)}
-          required
-        />
+        <div>
+          <label>Land ID:</label>
+          <input type="text" value={landId} onChange={(e) => setLandId(e.target.value)} />
+        </div>
+        <div>
+          <label>To Address:</label>
+          <input type="text" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
         <button type="submit">Transfer</button>
       </form>
+      <p>{message}</p>
     </div>
   );
 };
