@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom'; // Use NavLink for active styling
+import { NavLink } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 
@@ -23,6 +23,12 @@ const Navbar = () => {
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
               <NavLink className="nav-link" to="/" end>Home</NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link" to="/manage-land">Manage Land</NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link" to="/admin">Admin</NavLink>
             </li>
             <li className="nav-item">
               <NavLink className="nav-link" to="/about">About</NavLink>

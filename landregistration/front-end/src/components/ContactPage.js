@@ -1,7 +1,7 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
-import Navbar from './Navbar'; // Import Navbar component
+import Navbar from './Navbar';
 import Footer from './Footer';
 
 const ContactPage = () => {
