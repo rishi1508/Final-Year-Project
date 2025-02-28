@@ -1,6 +1,7 @@
 # Land Registry Using Blockchain
 
 ## Live Demo
+
 - **URL**: https://rishi1508.github.io/Final-Year-Project
 - **Requirements**:
   - Modern browser (Chrome, Firefox, etc.).
@@ -8,11 +9,12 @@
   - Sepolia test ETH (via faucet).
 
 ## Running Locally
+
 1. **Clone**: `git clone https://github.com/rishi1508/Final-Year-Project.git`
 2. **Install**: `cd landregistration/front-end && npm install`
 3. **Run**: `npm start`
 4. **Requirements**:
-   - Node.js 16.x or 18.x
+   - Node.js
    - Git
    - MetaMask on Sepolia with test ETH
 
