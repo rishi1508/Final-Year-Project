@@ -37,12 +37,12 @@ The **Land Registry Using Blockchain** project aims to revolutionize the traditi
 
 ## Technologies Used
 
-Blockchain: Ethereum
-Front-end: React.js, Bootstrap, CSS
-Back-end: Solidity, Node.js, Web3.js
-Framework: Truffle, Ganache, Alchemy (for API)
-Wallet: Metamask
-Hosting: Github Pages
+- Blockchain: **Ethereum**
+- Front-end: **React.js, Bootstrap, CSS**
+- Back-end: **Solidity, Node.js, Web3.js**
+- Framework: **Truffle, Ganache, Alchemy (for API)**
+- Wallet: **Metamask**
+- Hosting: **Github Pages**
 
 ## Project Structure
 
