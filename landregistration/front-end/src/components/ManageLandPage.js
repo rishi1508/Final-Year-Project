@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
-import Web3 from 'web3';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import LandRegistry from '../contracts/LandRegistry.json';
 import { WalletContext } from './WalletContext';
 
 const ManageLandPage = () => {
-  const { isConnected, web3, contract, account, connectWallet } = useContext(WalletContext);
+  const { isConnected, contract, account, connectWallet } = useContext(WalletContext);
   const [plotNumber, setPlotNumber] = useState('');
   const [area, setArea] = useState('');
   const [district, setDistrict] = useState('');
@@ -23,15 +21,7 @@ const ManageLandPage = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activeSection, setActiveSection] = useState(null);
 
-  useEffect(() => {
-    if (isConnected && account) {
-      fetchUserLands(account);
-      fetchLandsForSale();
-      fetchPendingRequests(account);
-    }
-  }, [isConnected, account, contract]);
-
-  const fetchUserLands = async (userAccount) => {
+  const fetchUserLands = useCallback(async (userAccount) => {
     if (!contract || !userAccount) return;
     try {
       const landIds = await contract.methods.getLandsByOwner(userAccount).call();
@@ -55,9 +45,9 @@ const ManageLandPage = () => {
     } catch (error) {
       console.error('Error fetching user lands:', error);
     }
-  };
+  }, [contract]);
 
-  const fetchLandsForSale = async () => {
+  const fetchLandsForSale = useCallback(async () => {
     if (!contract) return;
     try {
       const totalLands = await contract.methods.landCount().call();
@@ -81,9 +71,9 @@ const ManageLandPage = () => {
     } catch (error) {
       console.error('Error fetching lands for sale:', error);
     }
-  };
+  }, [contract]);
 
-  const fetchPendingRequests = async (userAccount) => {
+  const fetchPendingRequests = useCallback(async (userAccount) => {
     if (!contract || !userAccount) return;
     try {
       const pendingIds = await contract.methods.getPendingTransferRequests(userAccount).call();
@@ -107,14 +97,44 @@ const ManageLandPage = () => {
     } catch (error) {
       console.error('Error fetching pending requests:', error);
     }
-  };
+  }, [contract]);
+
+  useEffect(() => {
+    if (isConnected && account) {
+      fetchUserLands(account);
+      fetchLandsForSale();
+      fetchPendingRequests(account);
+    }
+  }, [isConnected, account, contract, fetchUserLands, fetchLandsForSale, fetchPendingRequests]);
 
   const registerLand = async () => {
-    if (!contract || !account || !plotNumber || !area || !district || !city || !state || !areaSqYd) return;
+    console.log('registerLand called');
+    console.log('Contract:', !!contract);
+    console.log('Account:', account);
+    console.log('Land details:', { plotNumber, area, district, city, state, areaSqYd });
+  
+    if (!contract) {
+      console.log('Contract not initialized');
+      alert('Contract not initialized. Please ensure the wallet is connected and the app is loaded correctly.');
+      return;
+    }
+    if (!account) {
+      console.log('No account connected');
+      alert('No wallet connected. Please connect your wallet.');
+      return;
+    }
+    if (!plotNumber || !area || !district || !city || !state || !areaSqYd) {
+      console.log('Missing required fields');
+      alert('Please fill in all land details.');
+      return;
+    }
+  
     try {
-      await contract.methods
+      console.log('Sending transaction to register land...');
+      const tx = await contract.methods
         .registerLand(plotNumber, area, district, city, state, areaSqYd)
-        .send({ from: account });
+        .send({ from: account, gas: 3000000 });
+      console.log('Transaction successful:', tx.transactionHash);
       alert('Land registered successfully!');
       setPlotNumber('');
       setArea('');
@@ -126,7 +146,7 @@ const ManageLandPage = () => {
       setActiveSection(null);
     } catch (error) {
       console.error('Error registering land:', error);
-      alert('Failed to register land.');
+      alert('Failed to register land: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -188,7 +208,6 @@ const ManageLandPage = () => {
     if (!contract || !landIdToVerify) return;
     try {
       const result = await contract.methods.verifyLand(landIdToVerify).call();
-      // Check if the land exists by verifying if owner is not the zero address
       if (result[6] === '0x0000000000000000000000000000000000000000') {
         setVerificationError('The given Land ID is not associated with any registered land in the records.');
         setVerificationResult(null);
