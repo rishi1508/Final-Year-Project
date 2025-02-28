@@ -23,8 +23,12 @@ contract LandRegistry {
     uint256 public landCount;
     mapping(uint256 => Land) public lands;
     mapping(address => uint256[]) public ownerLands;
-    mapping(uint256 => OwnershipHistory[]) public landOwnershipHistory; // New mapping for ownership history
-    address public admin; // Admin address
+    mapping(uint256 => OwnershipHistory[]) public landOwnershipHistory;
+
+    // Define admin address as a constant
+    address public constant ADMIN_ADDRESS =
+        0x7F585D7A9751a7388909Ed940E29732306A98f0c;
+    address public admin = ADMIN_ADDRESS; // Initialize admin with constant
 
     event LandRegistered(
         uint256 id,
@@ -44,7 +48,7 @@ contract LandRegistry {
 
     constructor() {
         landCount = 0;
-        admin = msg.sender; // Set deployer as admin
+        // No need to set admin here; it's initialized above
     }
 
     modifier onlyOwner(uint256 _landId) {
@@ -211,7 +215,6 @@ contract LandRegistry {
         return pendingRequests;
     }
 
-    // Admin-only functions
     function getAllLands() public view onlyAdmin returns (Land[] memory) {
         Land[] memory allLands = new Land[](landCount);
         for (uint256 i = 1; i <= landCount; i++) {

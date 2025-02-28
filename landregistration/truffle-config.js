@@ -41,10 +41,9 @@
  * https://trufflesuite.com/docs/truffle/getting-started/using-the-truffle-dashboard/
  */
 
-// require('dotenv').config();
-// const { MNEMONIC, PROJECT_ID } = process.env;
-
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+require('dotenv').config();
+const { MNEMONIC, ALCHEMY_API_KEY } = process.env;
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 module.exports = {
   /**
@@ -64,11 +63,11 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    development: {
-     host: "127.0.0.1",     // Localhost (default: none)
-     port: 7545,            // Standard Ethereum port (default: none)
-     network_id: "*",       // Any network (default: none)
-    },
+    // development: {
+    //  host: "127.0.0.1",     // Localhost (default: none)
+    //  port: 7545,            // Standard Ethereum port (default: none)
+    //  network_id: "*",       // Any network (default: none)
+    // },
     //
     // An additional network, but with some advanced options…
     // advanced: {
@@ -89,6 +88,14 @@ module.exports = {
     //   timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
     //   skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     // },
+    sepolia: {
+      provider: () => new HDWalletProvider(MNEMONIC, `wss://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`),
+      network_id: 11155111,
+      gas: 5500000, // Gas limit; adjust if needed
+      confirmations: 2, // Wait for 2 confirmations
+      timeoutBlocks: 200, // Timeout after 200 blocks
+      skipDryRun: true
+    }
     //
     // Useful for private networks
     // private: {

@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { WalletContext } from './WalletContext';
+
+// Define admin address as a constant to match LandRegistry.sol
+const ADMIN_ADDRESS = '0x7F585D7A9751a7388909Ed940E29732306A98f0c';
 
 const AdminPanel = () => {
   const { isConnected, contract, account, connectWallet } = useContext(WalletContext);
@@ -14,49 +17,82 @@ const AdminPanel = () => {
   const [landIdForHistory, setLandIdForHistory] = useState('');
   const [activeSection, setActiveSection] = useState(null);
 
-  // Replace with your admin address (the one used to deploy the contract)
-  const ADMIN_ADDRESS = '0xYourAdminAddressHere'; // Update this!
+  const checkAdminStatus = useCallback(() => {
+    if (!account) return;
+    const isAdminAccount = account.toLowerCase() === ADMIN_ADDRESS.toLowerCase();
+    setIsAdmin(isAdminAccount);
+    setAdminError(isAdminAccount ? '' : 'This account does not have administrator privileges.');
+  }, [account]);
 
   useEffect(() => {
-    if (isConnected && account && contract) {
+    if (isConnected && account) {
       checkAdminStatus();
     }
-  }, [isConnected, account, contract]);
+  }, [isConnected, account, checkAdminStatus]);
 
-  const checkAdminStatus = async () => {
+  const fetchAllLands = useCallback(async () => {
+    console.log('fetchAllLands called');
+    console.log('Contract:', !!contract);
+    console.log('isAdmin:', isAdmin);
+    if (!contract || !isAdmin) {
+      console.log('Cannot fetch lands: contract or admin status missing');
+      setAdminError('Cannot fetch lands: Contract or admin status missing.');
+      return;
+    }
     try {
-      const contractAdmin = await contract.methods.admin().call();
-      if (account.toLowerCase() === contractAdmin.toLowerCase()) {
-        setIsAdmin(true);
-        setAdminError('');
+      console.log('Fetching all lands from contract at:', contract._address);
+      console.log('Contract methods:', Object.keys(contract.methods));
+      const landCount = await contract.methods.landCount().call();
+      console.log('Land count:', landCount);
+      const lands = await contract.methods.getAllLands().call();
+      console.log('Lands fetched:', lands);
+      setAllLands(lands);
+      if (lands.length === 0) {
+        setAdminError('No lands registered on the contract yet.');
       } else {
-        setIsAdmin(false);
+        setAdminError('');
       }
     } catch (error) {
-      console.error('Error checking admin status:', error);
-    }
-  };
-
-  const fetchAllLands = async () => {
-    if (!contract || !isAdmin) return;
-    try {
-      const lands = await contract.methods.getAllLands().call();
-      setAllLands(lands);
-    } catch (error) {
       console.error('Error fetching all lands:', error);
+      let errorMsg = error.message || 'Unknown error';
+      if (error.data && error.data.message) {
+        errorMsg = error.data.message;
+      }
+      setAdminError('Failed to fetch lands: ' + errorMsg);
+      alert('Failed to fetch lands: ' + errorMsg);
     }
-  };
+  }, [contract, isAdmin]);
 
-  const fetchPastOwners = async () => {
-    if (!contract || !isAdmin || !landIdForHistory) return;
+  const fetchPastOwners = useCallback(async () => {
+    console.log('fetchPastOwners called');
+    console.log('Contract:', !!contract);
+    console.log('isAdmin:', isAdmin);
+    console.log('Land ID:', landIdForHistory);
+    if (!contract || !isAdmin || !landIdForHistory) {
+      console.log('Cannot fetch history: missing contract, admin, or land ID');
+      alert('Cannot fetch history: Missing required data.');
+      return;
+    }
     try {
+      console.log('Checking if Land ID exists:', landIdForHistory);
+      const land = await contract.methods.lands(landIdForHistory).call();
+      console.log('Land details:', land);
+      console.log('Fetching past ownership for Land ID:', landIdForHistory);
       const history = await contract.methods.getPastOwnershipDetails(landIdForHistory).call();
+      console.log('History fetched:', history);
       setPastOwners(history);
+      if (history.length === 0) {
+        alert('No ownership history found for Land ID ' + landIdForHistory);
+      }
     } catch (error) {
       console.error('Error fetching past owners:', error);
-      alert('Failed to fetch past ownership details.');
+      let errorMsg = error.message || 'Unknown error';
+      if (error.data && error.data.message) {
+        errorMsg = error.data.message;
+      }
+      alert('Failed to fetch past ownership details: ' + errorMsg);
     }
-  };
+  }, [contract, isAdmin, landIdForHistory]);
 
   const toggleSection = (section) => {
     setActiveSection(activeSection === section ? null : section);
@@ -84,7 +120,7 @@ const AdminPanel = () => {
                   </button>
                   {isConnected && !isAdmin && (
                     <p className="text-danger mt-2">
-                      This account does not have administrator privileges. Kindly login with an account with administrator privileges.
+                      {adminError || 'This account does not have administrator privileges.'}
                     </p>
                   )}
                 </div>
@@ -102,7 +138,6 @@ const AdminPanel = () => {
               </button>
             </div>
 
-            {/* Show Lands Section */}
             {activeSection === 'show' && (
               <div className="mb-4">
                 <h4>All Lands</h4>
@@ -130,12 +165,13 @@ const AdminPanel = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center">No lands fetched yet. Click "Fetch All Lands" to load.</p>
+                  <p className="text-center">
+                    {adminError || 'No lands fetched yet. Click "Fetch All Lands" to load.'}
+                  </p>
                 )}
               </div>
             )}
 
-            {/* Past Ownership Details Section */}
             {activeSection === 'history' && (
               <div className="row justify-content-center">
                 <div className="col-md-6 mb-4">
