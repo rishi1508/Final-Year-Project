@@ -11,7 +11,7 @@ import AdminPanel from './components/AdminPanel';
 function App() {
   return (
     <WalletProvider>
-      <Router>
+      <Router basename="/Final-Year-Project">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
