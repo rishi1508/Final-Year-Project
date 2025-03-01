@@ -77,15 +77,47 @@
   transform: scale(1.05);
 }
 
-/* Card styling for Features page */
-.card {
+/* feature cards */
+.feature-card {
   border: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
 }
 
-.card-title {
-  color: #003087; /* Navy blue for titles */
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
 }
+
+.icon-container {
+  font-size: 40px;
+  color: #007bff;
+  margin-bottom: 15px;
+  transition: color 0.3s ease;
+}
+
+.feature-card:hover .icon-container {
+  color: #0056b3;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fadeIn 1s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* featuer card ends here */
+
 
 /* General page padding to account for fixed navbar */
 body {

@@ -5,7 +5,7 @@ import '../styles.css'; // Ensure styles are applied
 const Footer = () => {
   return (
     <footer className="bg-dark text-white text-center py-3">
-      <p>© 2025 Land Registry on Blockchain. All rights reserved.</p>
+      <p>© 2025 Land Registry using Blockchain. All rights reserved.</p>
     </footer>
   );
 };
