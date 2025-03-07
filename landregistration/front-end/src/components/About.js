@@ -5,7 +5,7 @@ import '../styles.css';
 const About = () => {
   return (
     <div className="container my-5">
-      <h1 className="text-center mb-4">About Us</h1>
+      <h1 className="text-center mb-4 fade-in">About Us</h1>
       <div className="row">
         <div className="col-md-8 mx-auto">
           <p className="lead text-center">

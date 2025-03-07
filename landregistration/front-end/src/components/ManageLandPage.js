@@ -240,7 +240,7 @@ const ManageLandPage = () => {
     <div>
       <Navbar />
       <div className="container my-5 pt-5">
-        <h1 className="text-center mb-4">Manage Land</h1>
+        <h1 className="text-center mb-4 fade-in">Manage Land</h1>
         {!isConnected ? (
           <div className="text-center">
             <button

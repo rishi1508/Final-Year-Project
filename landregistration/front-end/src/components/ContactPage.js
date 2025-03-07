@@ -28,7 +28,7 @@ const ContactPage = () => {
 
       {/* Contact Content */}
       <div className="container my-5 pt-5">
-        <h1 className="text-center mb-4">Contact Us</h1>
+        <h1 className="text-center mb-4 fade-in">Contact Us</h1>
         <div className="row">
           <div className="col-md-6 mx-auto">
             <form onSubmit={handleSubmit}>
