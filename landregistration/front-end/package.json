@@ -5,6 +5,7 @@
   "homepage": "https://rishi1508.github.io/Final-Year-Project",
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@popperjs/core": "^2.11.8",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -12,6 +13,7 @@
     "@truffle/contract": "^4.6.31",
     "bootstrap": "^5.3.3",
     "front-end": "file:",
+    "jquery": "^3.7.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",

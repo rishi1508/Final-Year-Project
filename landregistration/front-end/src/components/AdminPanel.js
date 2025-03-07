@@ -104,7 +104,7 @@ const AdminPanel = () => {
     <div>
       <Navbar />
       <div className="container my-5 pt-5">
-        <h1 className="text-center mb-4">Admin Panel</h1>
+        <h1 className="text-center mb-4 fade-in">Admin Panel</h1>
         {!isConnected || !isAdmin ? (
           <div className="row justify-content-center">
             <div className="col-md-6">
