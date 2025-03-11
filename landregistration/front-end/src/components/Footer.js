@@ -41,16 +41,8 @@ const Footer = () => {
 
           <div className="col-md-4">
             <h5>Follow Us</h5>
-            <div className="d-flex justify-content-center gap-3">
-              <a href="https://facebook.com" className="text-white">
-                <FaFacebook size={24} />
-              </a>
-              <a href="https://twitter.com" className="text-white">
-                <FaTwitter size={24} />
-              </a>
-              <a href="https://linkedin.com" className="text-white">
-                <FaLinkedin size={24} />
-              </a>
+            <div className="d-flex justify-content-around">
+              
               <a href="https://github.com/Sanjay8602/Final-Year-Project" className="text-white">
                 <FaGithub size={24} />
               </a>
