@@ -11,7 +11,7 @@
 
 .navbar-dark .navbar-nav .nav-link:hover,
 .navbar-dark .navbar-nav .nav-link.active {
-  color: #00aaff; /* Light blue for hover and active state */
+  color: #00aaff; 
 }
 
 .navbar-brand {
@@ -122,7 +122,7 @@
 /* General page padding to account for fixed navbar */
 body {
   font-family: "Gill Sans", sans-serif;
-  padding-top: 70px; /* Match navbar height */
+  padding-top: 60px; /* Match navbar height */
 }
 
 

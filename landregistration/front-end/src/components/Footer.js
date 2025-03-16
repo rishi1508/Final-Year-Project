@@ -2,6 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaFacebook, FaTwitter, FaLinkedin, FaGithub } from "react-icons/fa";
 import "../styles.css";
+import ContactPage from "./ContactPage";
 
 const Footer = () => {
   return (
@@ -23,7 +24,7 @@ const Footer = () => {
               </li>
               
               <li>
-                <a href="/contact" className="text-white text-decoration-none">
+                <a href="./contact" className="text-white text-decoration-none">
                   Contact
                 </a>
               </li>
