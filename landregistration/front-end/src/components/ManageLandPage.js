@@ -4,14 +4,12 @@ import '../styles.css';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { WalletContext } from './WalletContext';
-
-// Create this component in a separate file
-const LoadingSpinner = ({ size = "small" }) => {
-  return <div className={`spinner spinner-${size}`}></div>;
-};
+import LoadingSpinner from './LoadingSpinner';
+import Tooltip from './Tooltip';
+import ConfirmationDialog from './ConfirmationDialog';
 
 const ManageLandPage = () => {
-  const { isConnected, contract, account, connectWallet } = useContext(WalletContext);
+  const { isConnected, contract, account, connectWallet, getAccountName } = useContext(WalletContext);
   const [plotNumber, setPlotNumber] = useState('');
   const [area, setArea] = useState('');
   const [district, setDistrict] = useState('');
@@ -25,6 +23,17 @@ const ManageLandPage = () => {
   const [landsForSale, setLandsForSale] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activeSection, setActiveSection] = useState(null);
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {},
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel'
+  });
   
   // New state variables for improved UX
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +63,7 @@ const ManageLandPage = () => {
             city: land.city,
             state: land.state,
             areaSqYd: land.areaSqYd,
-            owner: land.owner,
+            owner: getAccountName(land.owner),
             isForSale: land.isForSale,
           };
         })
@@ -69,7 +78,7 @@ const ManageLandPage = () => {
     } finally {
       setSectionLoading(prev => ({ ...prev, show: false }));
     }
-  }, [contract]);
+  }, [contract, getAccountName]);
 
   const fetchLandsForSale = useCallback(async () => {
     if (!contract) return;
@@ -88,7 +97,7 @@ const ManageLandPage = () => {
             city: land.city,
             state: land.state,
             areaSqYd: land.areaSqYd,
-            owner: land.owner,
+            owner: getAccountName(land.owner),
           });
         }
       }
@@ -102,7 +111,7 @@ const ManageLandPage = () => {
     } finally {
       setSectionLoading(prev => ({ ...prev, explore: false }));
     }
-  }, [contract]);
+  }, [contract, getAccountName]);
 
   const fetchPendingRequests = useCallback(async (userAccount) => {
     if (!contract || !userAccount) return;
@@ -120,8 +129,8 @@ const ManageLandPage = () => {
             city: land.city,
             state: land.state,
             areaSqYd: land.areaSqYd,
-            owner: land.owner,
-            requester: land.transferRequest,
+            owner: getAccountName(land.owner),
+            requester: getAccountName(land.transferRequest),
           };
         })
       );
@@ -135,7 +144,7 @@ const ManageLandPage = () => {
     } finally {
       setSectionLoading(prev => ({ ...prev, approve: false }));
     }
-  }, [contract]);
+  }, [contract, getAccountName]);
 
   useEffect(() => {
     if (isConnected && account) {
@@ -158,8 +167,31 @@ const ManageLandPage = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const registerLand = async () => {
+  // Handles the confirmation decision for land registration
+  const handleRegisterLandConfirmation = () => {
     if (!validateForm()) return;
+
+    setConfirmDialog({
+      show: true,
+      title: 'Confirm Land Registration',
+      message: `Are you sure you want to register this land with the following details?
+      \nPlot Number: ${plotNumber}
+      \nArea: ${area}
+      \nDistrict: ${district}
+      \nCity: ${city}
+      \nState: ${state}
+      \nArea (sq. yd): ${areaSqYd}`,
+      onConfirm: performRegisterLand,
+      onCancel: () => setConfirmDialog({ ...confirmDialog, show: false }),
+      confirmButtonText: 'Register',
+      cancelButtonText: 'Cancel'
+    });
+  };
+
+  // Actually performs the land registration
+  const performRegisterLand = async () => {
+    setConfirmDialog({ ...confirmDialog, show: false });
+
     if (!contract || !account) {
       setTransactionStatus({
         type: 'error',
@@ -206,7 +238,23 @@ const ManageLandPage = () => {
     }
   };
 
-  const putLandForSale = async (landId) => {
+  // Handle confirmation for putting land for sale
+  const handlePutLandForSaleConfirmation = (landId, plotNum) => {
+    setConfirmDialog({
+      show: true,
+      title: 'Confirm Land For Sale',
+      message: `Are you sure you want to put Land ID ${landId} (Plot Number: ${plotNum}) for sale? This will allow other users to request ownership transfer.`,
+      onConfirm: () => performPutLandForSale(landId),
+      onCancel: () => setConfirmDialog({ ...confirmDialog, show: false }),
+      confirmButtonText: 'Put For Sale',
+      cancelButtonText: 'Cancel'
+    });
+  };
+
+  // Actually puts the land for sale
+  const performPutLandForSale = async (landId) => {
+    setConfirmDialog({ ...confirmDialog, show: false });
+    
     if (!contract || !account || !landId) return;
     try {
       setIsLoading(true);
@@ -235,7 +283,23 @@ const ManageLandPage = () => {
     }
   };
 
-  const requestTransfer = async (landId) => {
+  // Handle confirmation for requesting land transfer
+  const handleRequestTransferConfirmation = (landId, plotNum, owner) => {
+    setConfirmDialog({
+      show: true,
+      title: 'Confirm Transfer Request',
+      message: `Are you sure you want to request ownership transfer for Land ID ${landId} (Plot Number: ${plotNum}) from ${owner}?`,
+      onConfirm: () => performRequestTransfer(landId),
+      onCancel: () => setConfirmDialog({ ...confirmDialog, show: false }),
+      confirmButtonText: 'Request Transfer',
+      cancelButtonText: 'Cancel'
+    });
+  };
+
+  // Actually performs the transfer request
+  const performRequestTransfer = async (landId) => {
+    setConfirmDialog({ ...confirmDialog, show: false });
+    
     if (!contract || !account || !landId) return;
     try {
       setIsLoading(true);
@@ -263,7 +327,23 @@ const ManageLandPage = () => {
     }
   };
 
-  const approveTransfer = async (landId) => {
+  // Handle confirmation for approving a transfer
+  const handleApproveTransferConfirmation = (landId, requester) => {
+    setConfirmDialog({
+      show: true,
+      title: 'Confirm Ownership Transfer',
+      message: `Are you sure you want to approve the ownership transfer of Land ID ${landId} to ${requester}? This action is irreversible.`,
+      onConfirm: () => performApproveTransfer(landId),
+      onCancel: () => setConfirmDialog({ ...confirmDialog, show: false }),
+      confirmButtonText: 'Approve Transfer',
+      cancelButtonText: 'Cancel'
+    });
+  };
+
+  // Actually approves the transfer
+  const performApproveTransfer = async (landId) => {
+    setConfirmDialog({ ...confirmDialog, show: false });
+    
     if (!contract || !account || !landId) return;
     try {
       setIsLoading(true);
@@ -343,7 +423,7 @@ const ManageLandPage = () => {
           city: result[3],
           state: result[4],
           areaSqYd: result[5],
-          owner: result[6],
+          owner: getAccountName(result[6]),
         });
       }
     } catch (error) {
@@ -513,7 +593,7 @@ const ManageLandPage = () => {
                   
                   <button 
                     className="btn btn-primary w-100" 
-                    onClick={registerLand}
+                    onClick={handleRegisterLandConfirmation}
                     disabled={sectionLoading.register}
                   >
                     {sectionLoading.register ? <LoadingSpinner /> : 'Register Land'}
@@ -553,7 +633,9 @@ const ManageLandPage = () => {
                         <p className="card-text">City: {verificationResult.city}</p>
                         <p className="card-text">State: {verificationResult.state}</p>
                         <p className="card-text">Area (sq. yd): {verificationResult.areaSqYd}</p>
-                        <p className="card-text">Owner: {verificationResult.owner}</p>
+                        <p className="card-text">
+                          Owner: {verificationResult.owner} <Tooltip text="This is the current owner of the land." />
+                        </p>
                       </div>
                     </div>
                   )}
@@ -588,7 +670,9 @@ const ManageLandPage = () => {
                             <p className="card-text">City: {land.city}</p>
                             <p className="card-text">State: {land.state}</p>
                             <p className="card-text">Area (sq. yd): {land.areaSqYd}</p>
-                            <p className="card-text">Owner: {land.owner}</p>
+                            <p className="card-text">
+                              Owner: {land.owner} <Tooltip text="This is the current owner of the land." />
+                            </p>
                             <p className="card-text">
                               For Sale: <span className={land.isForSale ? 'text-success' : 'text-danger'}>
                                 {land.isForSale ? 'Yes' : 'No'}
@@ -597,7 +681,7 @@ const ManageLandPage = () => {
                             {!land.isForSale && (
                               <button
                                 className="btn btn-primary w-100"
-                                onClick={() => putLandForSale(land.id)}
+                                onClick={() => handlePutLandForSaleConfirmation(land.id, land.plotNumber)}
                                 disabled={isLoading}
                               >
                                 {isLoading ? <LoadingSpinner /> : 'Put for Sale'}
@@ -637,11 +721,13 @@ const ManageLandPage = () => {
                             <p className="card-text">City: {land.city}</p>
                             <p className="card-text">State: {land.state}</p>
                             <p className="card-text">Area (sq. yd): {land.areaSqYd}</p>
-                            <p className="card-text">Owner: {land.owner}</p>
-                            {land.owner !== account && (
+                            <p className="card-text">
+                              Owner: {land.owner} <Tooltip text="This is the current owner of the land." />
+                            </p>
+                            {land.owner !== getAccountName(account) && (
                               <button
                                 className="btn btn-primary w-100 mt-2"
-                                onClick={() => requestTransfer(land.id)}
+                                onClick={() => handleRequestTransferConfirmation(land.id, land.plotNumber, land.owner)}
                                 disabled={isLoading}
                               >
                                 {isLoading ? <LoadingSpinner /> : 'Request Transfer'}
@@ -681,12 +767,16 @@ const ManageLandPage = () => {
                             <p className="card-text">City: {request.city}</p>
                             <p className="card-text">State: {request.state}</p>
                             <p className="card-text">Area (sq. yd): {request.areaSqYd}</p>
-                            <p className="card-text">Owner: {request.owner}</p>
-                            <p className="card-text">Requester: {request.requester}</p>
+                            <p className="card-text">
+                              Owner: {request.owner} <Tooltip text="This is the current owner of the land." />
+                            </p>
+                            <p className="card-text">
+                              Requester: {request.requester} <Tooltip text="This is the user requesting the transfer." />
+                            </p>
                             <div className="d-flex gap-2 mt-2">
                               <button
                                 className="btn btn-success w-50"
-                                onClick={() => approveTransfer(request.id)}
+                                onClick={() => handleApproveTransferConfirmation(request.id, request.requester)}
                                 disabled={isLoading}
                               >
                                 {isLoading ? <LoadingSpinner /> : 'Approve'}
@@ -713,6 +803,17 @@ const ManageLandPage = () => {
         )}
       </div>
       <Footer />
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        show={confirmDialog.show}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={confirmDialog.onCancel}
+        confirmButtonText={confirmDialog.confirmButtonText}
+        cancelButtonText={confirmDialog.cancelButtonText}
+      />
     </div>
   );
 };

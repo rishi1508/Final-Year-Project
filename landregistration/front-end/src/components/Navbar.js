@@ -1,13 +1,11 @@
-// landregistration/front-end/src/components/Navbar.js
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 import { WalletContext } from './WalletContext';
-import config from '../config';
 
 const Navbar = () => {
-  const { isConnected, account } = useContext(WalletContext);
+  const { isConnected, accountName } = useContext(WalletContext);
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-navy fixed-top">
@@ -50,7 +48,7 @@ const Navbar = () => {
             <div className="ms-lg-3 mt-2 mt-lg-0">
               <span className="badge bg-light text-dark p-2">
                 <i className="bi bi-wallet2 me-1"></i>
-                {config.shortenAddress(account)}
+                {accountName}
               </span>
             </div>
           )}
