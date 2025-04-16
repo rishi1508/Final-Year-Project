@@ -5,6 +5,11 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { WalletContext } from './WalletContext';
 
+// Create this component in a separate file
+const LoadingSpinner = ({ size = "small" }) => {
+  return <div className={`spinner spinner-${size}`}></div>;
+};
+
 const ManageLandPage = () => {
   const { isConnected, contract, account, connectWallet } = useContext(WalletContext);
   const [plotNumber, setPlotNumber] = useState('');
@@ -20,10 +25,23 @@ const ManageLandPage = () => {
   const [landsForSale, setLandsForSale] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activeSection, setActiveSection] = useState(null);
+  
+  // New state variables for improved UX
+  const [isLoading, setIsLoading] = useState(false);
+  const [sectionLoading, setSectionLoading] = useState({
+    register: false,
+    verify: false,
+    show: false,
+    explore: false,
+    approve: false
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [transactionStatus, setTransactionStatus] = useState(null);
 
   const fetchUserLands = useCallback(async (userAccount) => {
     if (!contract || !userAccount) return;
     try {
+      setSectionLoading(prev => ({ ...prev, show: true }));
       const landIds = await contract.methods.getLandsByOwner(userAccount).call();
       const lands = await Promise.all(
         landIds.map(async (id) => {
@@ -44,12 +62,19 @@ const ManageLandPage = () => {
       setUserLands(lands);
     } catch (error) {
       console.error('Error fetching user lands:', error);
+      setTransactionStatus({
+        type: 'error',
+        message: 'Failed to fetch your lands: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setSectionLoading(prev => ({ ...prev, show: false }));
     }
   }, [contract]);
 
   const fetchLandsForSale = useCallback(async () => {
     if (!contract) return;
     try {
+      setSectionLoading(prev => ({ ...prev, explore: true }));
       const totalLands = await contract.methods.landCount().call();
       const lands = [];
       for (let i = 1; i <= totalLands; i++) {
@@ -70,12 +95,19 @@ const ManageLandPage = () => {
       setLandsForSale(lands);
     } catch (error) {
       console.error('Error fetching lands for sale:', error);
+      setTransactionStatus({
+        type: 'error',
+        message: 'Failed to fetch lands for sale: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setSectionLoading(prev => ({ ...prev, explore: false }));
     }
   }, [contract]);
 
   const fetchPendingRequests = useCallback(async (userAccount) => {
     if (!contract || !userAccount) return;
     try {
+      setSectionLoading(prev => ({ ...prev, approve: true }));
       const pendingIds = await contract.methods.getPendingTransferRequests(userAccount).call();
       const requests = await Promise.all(
         pendingIds.map(async (id) => {
@@ -96,6 +128,12 @@ const ManageLandPage = () => {
       setPendingRequests(requests);
     } catch (error) {
       console.error('Error fetching pending requests:', error);
+      setTransactionStatus({
+        type: 'error',
+        message: 'Failed to fetch pending requests: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setSectionLoading(prev => ({ ...prev, approve: false }));
     }
   }, [contract]);
 
@@ -107,110 +145,196 @@ const ManageLandPage = () => {
     }
   }, [isConnected, account, contract, fetchUserLands, fetchLandsForSale, fetchPendingRequests]);
 
+  const validateForm = () => {
+    const errors = {};
+    if (!plotNumber.trim()) errors.plotNumber = 'Plot number is required';
+    if (!area.trim()) errors.area = 'Area is required';
+    if (!district.trim()) errors.district = 'District is required';
+    if (!city.trim()) errors.city = 'City is required';
+    if (!state.trim()) errors.state = 'State is required';
+    if (!areaSqYd || areaSqYd <= 0) errors.areaSqYd = 'Valid area in sq. yards is required';
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const registerLand = async () => {
-    console.log('registerLand called');
-    console.log('Contract:', !!contract);
-    console.log('Account:', account);
-    console.log('Land details:', { plotNumber, area, district, city, state, areaSqYd });
-  
-    if (!contract) {
-      console.log('Contract not initialized');
-      alert('Contract not initialized. Please ensure the wallet is connected and the app is loaded correctly.');
+    if (!validateForm()) return;
+    if (!contract || !account) {
+      setTransactionStatus({
+        type: 'error',
+        message: !contract 
+          ? 'Contract not initialized. Please ensure the wallet is connected.'
+          : 'No wallet connected. Please connect your wallet.'
+      });
       return;
     }
-    if (!account) {
-      console.log('No account connected');
-      alert('No wallet connected. Please connect your wallet.');
-      return;
-    }
-    if (!plotNumber || !area || !district || !city || !state || !areaSqYd) {
-      console.log('Missing required fields');
-      alert('Please fill in all land details.');
-      return;
-    }
-  
+
     try {
-      console.log('Sending transaction to register land...');
+      setIsLoading(true);
+      setSectionLoading(prev => ({ ...prev, register: true }));
+      setTransactionStatus({ type: 'pending', message: 'Registering land...' });
+      
       const tx = await contract.methods
         .registerLand(plotNumber, area, district, city, state, areaSqYd)
         .send({ from: account, gas: 3000000 });
-      console.log('Transaction successful:', tx.transactionHash);
-      alert('Land registered successfully!');
+      
+      setTransactionStatus({ 
+        type: 'success', 
+        message: 'Land registered successfully!',
+        hash: tx.transactionHash
+      });
+      
       setPlotNumber('');
       setArea('');
       setDistrict('');
       setCity('');
       setState('');
       setAreaSqYd('');
+      setFormErrors({});
       fetchUserLands(account);
-      setActiveSection(null);
+      
     } catch (error) {
       console.error('Error registering land:', error);
-      alert('Failed to register land: ' + (error.message || 'Unknown error'));
+      setTransactionStatus({ 
+        type: 'error', 
+        message: 'Failed to register land: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setIsLoading(false);
+      setSectionLoading(prev => ({ ...prev, register: false }));
     }
   };
 
   const putLandForSale = async (landId) => {
     if (!contract || !account || !landId) return;
     try {
-      await contract.methods.putLandForSale(landId).send({ from: account });
-      alert(`Land ID ${landId} marked for sale!`);
+      setIsLoading(true);
+      setTransactionStatus({ type: 'pending', message: 'Setting land for sale...' });
+      
+      const tx = await contract.methods.putLandForSale(landId).send({ from: account });
+      
+      setTransactionStatus({ 
+        type: 'success', 
+        message: `Land ID ${landId} marked for sale!`,
+        hash: tx.transactionHash
+      });
+      
       fetchUserLands(account);
       fetchLandsForSale();
       fetchPendingRequests(account);
+      
     } catch (error) {
       console.error('Error putting land for sale:', error);
-      alert('Failed to mark land for sale.');
+      setTransactionStatus({ 
+        type: 'error', 
+        message: 'Failed to mark land for sale: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const requestTransfer = async (landId) => {
     if (!contract || !account || !landId) return;
     try {
-      await contract.methods.requestTransfer(landId).send({ from: account });
-      alert(`Transfer request submitted for Land ID ${landId}!`);
+      setIsLoading(true);
+      setTransactionStatus({ type: 'pending', message: 'Requesting transfer...' });
+      
+      const tx = await contract.methods.requestTransfer(landId).send({ from: account });
+      
+      setTransactionStatus({ 
+        type: 'success', 
+        message: `Transfer request submitted for Land ID ${landId}!`,
+        hash: tx.transactionHash
+      });
+      
       fetchLandsForSale();
       fetchPendingRequests(account);
+      
     } catch (error) {
       console.error('Error requesting transfer:', error);
-      alert('Failed to request transfer.');
+      setTransactionStatus({ 
+        type: 'error', 
+        message: 'Failed to request transfer: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const approveTransfer = async (landId) => {
     if (!contract || !account || !landId) return;
     try {
-      await contract.methods.approveTransfer(landId).send({ from: account });
-      alert(`Transfer approved for Land ID ${landId}!`);
+      setIsLoading(true);
+      setTransactionStatus({ type: 'pending', message: 'Approving transfer...' });
+      
+      const tx = await contract.methods.approveTransfer(landId).send({ from: account });
+      
+      setTransactionStatus({ 
+        type: 'success', 
+        message: `Transfer approved for Land ID ${landId}!`,
+        hash: tx.transactionHash
+      });
+      
       fetchUserLands(account);
       fetchLandsForSale();
       fetchPendingRequests(account);
+      
     } catch (error) {
       console.error('Error approving transfer:', error);
-      alert('Failed to approve transfer.');
+      setTransactionStatus({ 
+        type: 'error', 
+        message: 'Failed to approve transfer: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const denyTransfer = async (landId) => {
     if (!contract || !account || !landId) return;
     try {
-      await contract.methods.denyTransfer(landId).send({ from: account });
-      alert(`Transfer denied for Land ID ${landId}!`);
+      setIsLoading(true);
+      setTransactionStatus({ type: 'pending', message: 'Denying transfer...' });
+      
+      const tx = await contract.methods.denyTransfer(landId).send({ from: account });
+      
+      setTransactionStatus({ 
+        type: 'success', 
+        message: `Transfer denied for Land ID ${landId}!`,
+        hash: tx.transactionHash
+      });
+      
       fetchPendingRequests(account);
       fetchLandsForSale();
+      
     } catch (error) {
       console.error('Error denying transfer:', error);
-      alert('Failed to deny transfer.');
+      setTransactionStatus({ 
+        type: 'error', 
+        message: 'Failed to deny transfer: ' + (error.message || 'Unknown error')
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const verifyLand = async () => {
-    if (!contract || !landIdToVerify) return;
+    if (!contract || !landIdToVerify) {
+      setVerificationError('Please enter a valid Land ID');
+      return;
+    }
+    
     try {
+      setSectionLoading(prev => ({ ...prev, verify: true }));
+      setVerificationError('');
+      setVerificationResult(null);
+      
       const result = await contract.methods.verifyLand(landIdToVerify).call();
+      
       if (result[6] === '0x0000000000000000000000000000000000000000') {
         setVerificationError('The given Land ID is not associated with any registered land in the records.');
-        setVerificationResult(null);
       } else {
         setVerificationResult({
           plotNumber: result[0],
@@ -221,12 +345,12 @@ const ManageLandPage = () => {
           areaSqYd: result[5],
           owner: result[6],
         });
-        setVerificationError('');
       }
     } catch (error) {
       console.error('Error verifying land:', error);
       setVerificationError('Failed to verify land. Please check the Land ID.');
-      setVerificationResult(null);
+    } finally {
+      setSectionLoading(prev => ({ ...prev, verify: false }));
     }
   };
 
@@ -234,6 +358,8 @@ const ManageLandPage = () => {
     setActiveSection(activeSection === section ? null : section);
     setVerificationResult(null);
     setVerificationError('');
+    setTransactionStatus(null);
+    setFormErrors({});
   };
 
   return (
@@ -241,33 +367,69 @@ const ManageLandPage = () => {
       <Navbar />
       <div className="container my-5 pt-5">
         <h1 className="text-center mb-4 fade-in">Manage Land</h1>
+        
         {!isConnected ? (
           <div className="text-center">
             <button
               onClick={connectWallet}
               className="btn btn-primary btn-lg"
               aria-label="Connect to Ethereum Wallet"
+              disabled={isLoading}
             >
-              Connect to Ethereum Wallet
+              {isLoading ? <LoadingSpinner /> : 'Connect to Ethereum Wallet'}
             </button>
           </div>
         ) : (
           <div>
+            {/* Transaction Status */}
+            {transactionStatus && (
+              <div className={`alert alert-${
+                transactionStatus.type === 'success' ? 'success' : 
+                transactionStatus.type === 'error' ? 'danger' : 
+                'warning'
+              } mb-4`}>
+                <p>{transactionStatus.message}</p>
+                {transactionStatus.hash && (
+                  <small>Transaction Hash: {transactionStatus.hash}</small>
+                )}
+              </div>
+            )}
+            
             {/* Action Buttons */}
             <div className="d-flex flex-wrap justify-content-center gap-3 mb-4">
-              <button className="btn btn-primary" onClick={() => toggleSection('register')}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => toggleSection('register')}
+                disabled={isLoading}
+              >
                 Register Land
               </button>
-              <button className="btn btn-primary" onClick={() => toggleSection('verify')}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => toggleSection('verify')}
+                disabled={isLoading}
+              >
                 Verify Land Ownership
               </button>
-              <button className="btn btn-primary" onClick={() => toggleSection('show')}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => toggleSection('show')}
+                disabled={isLoading}
+              >
                 Show Lands
               </button>
-              <button className="btn btn-primary" onClick={() => toggleSection('explore')}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => toggleSection('explore')}
+                disabled={isLoading}
+              >
                 Explore Lands
               </button>
-              <button className="btn btn-primary" onClick={() => toggleSection('approve')}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => toggleSection('approve')}
+                disabled={isLoading}
+              >
                 Approve Transfer
               </button>
             </div>
@@ -279,48 +441,82 @@ const ManageLandPage = () => {
                   <h4>Register Land</h4>
                   <input
                     type="text"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.plotNumber ? 'is-invalid' : ''}`}
                     placeholder="Plot Number"
                     value={plotNumber}
                     onChange={(e) => setPlotNumber(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
+                  {formErrors.plotNumber && (
+                    <div className="invalid-feedback mb-2">{formErrors.plotNumber}</div>
+                  )}
+                  
                   <input
                     type="text"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.area ? 'is-invalid' : ''}`}
                     placeholder="Area"
                     value={area}
                     onChange={(e) => setArea(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
+                  {formErrors.area && (
+                    <div className="invalid-feedback mb-2">{formErrors.area}</div>
+                  )}
+                  
                   <input
                     type="text"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.district ? 'is-invalid' : ''}`}
                     placeholder="District"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
+                  {formErrors.district && (
+                    <div className="invalid-feedback mb-2">{formErrors.district}</div>
+                  )}
+                  
                   <input
                     type="text"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.city ? 'is-invalid' : ''}`}
                     placeholder="City"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
+                  {formErrors.city && (
+                    <div className="invalid-feedback mb-2">{formErrors.city}</div>
+                  )}
+                  
                   <input
                     type="text"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.state ? 'is-invalid' : ''}`}
                     placeholder="State"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
+                  {formErrors.state && (
+                    <div className="invalid-feedback mb-2">{formErrors.state}</div>
+                  )}
+                  
                   <input
                     type="number"
-                    className="form-control mb-2"
+                    className={`form-control mb-2 ${formErrors.areaSqYd ? 'is-invalid' : ''}`}
                     placeholder="Area (sq. yd)"
                     value={areaSqYd}
                     onChange={(e) => setAreaSqYd(e.target.value)}
+                    disabled={sectionLoading.register}
                   />
-                  <button className="btn btn-primary w-100" onClick={registerLand}>
-                    Register Land
+                  {formErrors.areaSqYd && (
+                    <div className="invalid-feedback mb-2">{formErrors.areaSqYd}</div>
+                  )}
+                  
+                  <button 
+                    className="btn btn-primary w-100" 
+                    onClick={registerLand}
+                    disabled={sectionLoading.register}
+                  >
+                    {sectionLoading.register ? <LoadingSpinner /> : 'Register Land'}
                   </button>
                 </div>
               </div>
@@ -337,24 +533,33 @@ const ManageLandPage = () => {
                     placeholder="Land ID"
                     value={landIdToVerify}
                     onChange={(e) => setLandIdToVerify(e.target.value)}
+                    disabled={sectionLoading.verify}
                   />
-                  <button className="btn btn-primary w-100" onClick={verifyLand}>
-                    Verify Land
+                  <button 
+                    className="btn btn-primary w-100" 
+                    onClick={verifyLand}
+                    disabled={sectionLoading.verify}
+                  >
+                    {sectionLoading.verify ? <LoadingSpinner /> : 'Verify Land'}
                   </button>
+                  
                   {verificationResult && (
-                    <div className="mt-2">
-                      <p>Land ID: {landIdToVerify}</p>
-                      <p>Plot Number: {verificationResult.plotNumber}</p>
-                      <p>Area: {verificationResult.area}</p>
-                      <p>District: {verificationResult.district}</p>
-                      <p>City: {verificationResult.city}</p>
-                      <p>State: {verificationResult.state}</p>
-                      <p>Area (sq. yd): {verificationResult.areaSqYd}</p>
-                      <p>Owner: {verificationResult.owner}</p>
+                    <div className="mt-3 card">
+                      <div className="card-body">
+                        <h5 className="card-title">Land ID: {landIdToVerify}</h5>
+                        <p className="card-text">Plot Number: {verificationResult.plotNumber}</p>
+                        <p className="card-text">Area: {verificationResult.area}</p>
+                        <p className="card-text">District: {verificationResult.district}</p>
+                        <p className="card-text">City: {verificationResult.city}</p>
+                        <p className="card-text">State: {verificationResult.state}</p>
+                        <p className="card-text">Area (sq. yd): {verificationResult.areaSqYd}</p>
+                        <p className="card-text">Owner: {verificationResult.owner}</p>
+                      </div>
                     </div>
                   )}
+                  
                   {verificationError && (
-                    <p className="text-danger mt-2">{verificationError}</p>
+                    <div className="alert alert-danger mt-3">{verificationError}</div>
                   )}
                 </div>
               </div>
@@ -364,7 +569,13 @@ const ManageLandPage = () => {
             {activeSection === 'show' && (
               <div className="mb-4">
                 <h4>Show Lands</h4>
-                {userLands.length > 0 ? (
+                
+                {sectionLoading.show ? (
+                  <div className="text-center py-5">
+                    <LoadingSpinner size="medium" />
+                    <p className="mt-3">Loading your lands...</p>
+                  </div>
+                ) : userLands.length > 0 ? (
                   <div className="row">
                     {userLands.map((land) => (
                       <div key={land.id} className="col-md-4 mb-3">
@@ -378,13 +589,18 @@ const ManageLandPage = () => {
                             <p className="card-text">State: {land.state}</p>
                             <p className="card-text">Area (sq. yd): {land.areaSqYd}</p>
                             <p className="card-text">Owner: {land.owner}</p>
-                            <p className="card-text">For Sale: {land.isForSale ? 'Yes' : 'No'}</p>
+                            <p className="card-text">
+                              For Sale: <span className={land.isForSale ? 'text-success' : 'text-danger'}>
+                                {land.isForSale ? 'Yes' : 'No'}
+                              </span>
+                            </p>
                             {!land.isForSale && (
                               <button
                                 className="btn btn-primary w-100"
                                 onClick={() => putLandForSale(land.id)}
+                                disabled={isLoading}
                               >
-                                Put for Sale
+                                {isLoading ? <LoadingSpinner /> : 'Put for Sale'}
                               </button>
                             )}
                           </div>
@@ -393,7 +609,7 @@ const ManageLandPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center">No lands owned by this account.</p>
+                  <div className="alert alert-info">No lands owned by this account.</div>
                 )}
               </div>
             )}
@@ -402,7 +618,13 @@ const ManageLandPage = () => {
             {activeSection === 'explore' && (
               <div className="mb-4">
                 <h4>Explore Lands for Sale</h4>
-                {landsForSale.length > 0 ? (
+                
+                {sectionLoading.explore ? (
+                  <div className="text-center py-5">
+                    <LoadingSpinner size="medium" />
+                    <p className="mt-3">Loading lands for sale...</p>
+                  </div>
+                ) : landsForSale.length > 0 ? (
                   <div className="row">
                     {landsForSale.map((land) => (
                       <div key={land.id} className="col-md-4 mb-3">
@@ -420,8 +642,9 @@ const ManageLandPage = () => {
                               <button
                                 className="btn btn-primary w-100 mt-2"
                                 onClick={() => requestTransfer(land.id)}
+                                disabled={isLoading}
                               >
-                                Request Transfer
+                                {isLoading ? <LoadingSpinner /> : 'Request Transfer'}
                               </button>
                             )}
                           </div>
@@ -430,7 +653,7 @@ const ManageLandPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center">No lands available for sale.</p>
+                  <div className="alert alert-info">No lands available for sale.</div>
                 )}
               </div>
             )}
@@ -439,7 +662,13 @@ const ManageLandPage = () => {
             {activeSection === 'approve' && (
               <div className="mb-4">
                 <h4>Approve Transfer Requests</h4>
-                {pendingRequests.length > 0 ? (
+                
+                {sectionLoading.approve ? (
+                  <div className="text-center py-5">
+                    <LoadingSpinner size="medium" />
+                    <p className="mt-3">Loading transfer requests...</p>
+                  </div>
+                ) : pendingRequests.length > 0 ? (
                   <div className="row">
                     {pendingRequests.map((request) => (
                       <div key={request.id} className="col-md-4 mb-3">
@@ -458,14 +687,16 @@ const ManageLandPage = () => {
                               <button
                                 className="btn btn-success w-50"
                                 onClick={() => approveTransfer(request.id)}
+                                disabled={isLoading}
                               >
-                                Approve
+                                {isLoading ? <LoadingSpinner /> : 'Approve'}
                               </button>
                               <button
                                 className="btn btn-danger w-50"
                                 onClick={() => denyTransfer(request.id)}
+                                disabled={isLoading}
                               >
-                                Deny
+                                {isLoading ? <LoadingSpinner /> : 'Deny'}
                               </button>
                             </div>
                           </div>
@@ -474,7 +705,7 @@ const ManageLandPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center">No pending transfer requests.</p>
+                  <div className="alert alert-info">No pending transfer requests.</div>
                 )}
               </div>
             )}
