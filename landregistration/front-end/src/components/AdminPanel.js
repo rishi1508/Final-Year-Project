@@ -6,7 +6,7 @@ import Footer from './Footer';
 import { WalletContext } from './WalletContext';
 
 // Define admin address as a constant to match LandRegistry.sol
-const ADMIN_ADDRESS = '0x7F585D7A9751a7388909Ed940E29732306A98f0c';
+const ADMIN_ADDRESS = process.env.REACT_APP_ADMIN_ADDRESS;
 
 const AdminPanel = () => {
   const { isConnected, contract, account, connectWallet } = useContext(WalletContext);

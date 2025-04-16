@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import Web3 from 'web3';
 import LandRegistry from '../contracts/LandRegistry.json';
+import config from '../config';
 
 export const WalletContext = createContext();
 
@@ -9,82 +10,108 @@ export const WalletProvider = ({ children }) => {
   const [web3, setWeb3] = useState(null);
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState('');
-
-  console.log('WalletContext.js LOADED - Version 3.1'); // Updated version
+  const [networkError, setNetworkError] = useState('');
+  
+  console.log('WalletContext.js LOADED');
 
   useEffect(() => {
-    console.log('useEffect triggered in WalletContext.js');
     const initWeb3 = async () => {
       if (!window.ethereum) {
-        alert('Please install MetaMask.');
+        setNetworkError('Please install MetaMask to use this application.');
         console.error('MetaMask not detected');
         return;
       }
 
-      console.log('Initializing Web3...');
       try {
         const web3Instance = new Web3(window.ethereum);
         setWeb3(web3Instance);
-        console.log('Web3 set:', !!web3Instance);
-
+        
+        // Check if we're on the correct network
         const networkId = await web3Instance.eth.net.getId();
-        console.log('Network ID:', networkId);
-        // Fix: Check if network IS Sepolia (11155111)
-        if (Number(networkId) !== 11155111) { // Convert BigInt to Number for comparison
-          alert('Please switch to the Sepolia testnet in MetaMask.');
+        
+        if (Number(networkId) !== config.NETWORK_ID) {
+          setNetworkError(`Please switch to the ${config.NETWORK_NAME} testnet in MetaMask.`);
           console.error('Wrong network:', networkId);
+          
+          // Try to switch network automatically
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: Web3.utils.toHex(config.NETWORK_ID) }],
+            });
+          } catch (switchError) {
+            // This error code indicates that the chain has not been added to MetaMask
+            if (switchError.code === 4902) {
+              console.log('Network needs to be added to MetaMask');
+            }
+          }
           return;
         }
-        console.log('Network confirmed as Sepolia');
 
-        const contractAddress = '0xE2B49B1a6fc0b97c64252Ca617779Ccb14a965bf';
-        console.log('Contract address:', contractAddress);
+        // Contract initialization
+        const contractAddress = config.CONTRACT_ADDRESS;
         const landContract = new web3Instance.eth.Contract(LandRegistry.abi, contractAddress);
         setContract(landContract);
-        console.log('Contract set:', !!landContract);
-
+        
+        // Check if already connected
         const accounts = await web3Instance.eth.getAccounts();
-        console.log('Initial accounts:', accounts);
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setIsConnected(true);
+          setNetworkError('');
         }
       } catch (error) {
         console.error('Error in initWeb3:', error);
-        alert('Initialization error: ' + error.message);
+        setNetworkError('Failed to initialize: ' + error.message);
       }
     };
 
     initWeb3();
 
+    // Event listeners for MetaMask
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts) => {
         setAccount(accounts[0] || '');
         setIsConnected(!!accounts[0]);
         console.log('Accounts changed:', accounts);
       });
-      window.ethereum.on('chainChanged', () => window.location.reload());
+
+      window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+      });
     }
   }, []);
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert('Please install MetaMask.');
+      setNetworkError('Please install MetaMask.');
       return;
     }
+
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
       setAccount(accounts[0]);
       setIsConnected(true);
+      setNetworkError('');
+      
       console.log('Connected account:', accounts[0]);
     } catch (error) {
       console.error('Connect error:', error);
-      alert('Connect failed: ' + error.message);
+      setNetworkError('Connect failed: ' + error.message);
     }
   };
 
   return (
-    <WalletContext.Provider value={{ isConnected, web3, contract, account, connectWallet }}>
+    <WalletContext.Provider value={{ 
+      isConnected, 
+      web3, 
+      contract, 
+      account, 
+      connectWallet,
+      networkError
+    }}>
       {children}
     </WalletContext.Provider>
   );

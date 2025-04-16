@@ -1,20 +1,25 @@
-import React from 'react';
+// landregistration/front-end/src/components/Navbar.js
+import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
+import { WalletContext } from './WalletContext';
+import config from '../config';
 
 const Navbar = () => {
+  const { isConnected, account } = useContext(WalletContext);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-navy fixed-top">
       <div className="container">
         <NavLink className="navbar-brand" to="/">Land Registry</NavLink>
-        <button
-          className="navbar-toggler"
-          type="button"
+        <button 
+          className="navbar-toggler" 
+          type="button" 
           data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
+          data-bs-target="#navbarNav" 
+          aria-controls="navbarNav" 
+          aria-expanded="false" 
           aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
@@ -40,6 +45,15 @@ const Navbar = () => {
               <NavLink className="nav-link" to="/contact">Contact Us</NavLink>
             </li>
           </ul>
+          
+          {isConnected && (
+            <div className="ms-lg-3 mt-2 mt-lg-0">
+              <span className="badge bg-light text-dark p-2">
+                <i className="bi bi-wallet2 me-1"></i>
+                {config.shortenAddress(account)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </nav>
