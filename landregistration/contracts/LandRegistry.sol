@@ -25,6 +25,9 @@ contract LandRegistry {
     mapping(address => uint256[]) public ownerLands;
     mapping(uint256 => OwnershipHistory[]) public landOwnershipHistory;
 
+    // Add a mapping to check for duplicate land registrations
+    mapping(bytes32 => bool) private landExists;
+
     // Define admin address as a constant
     address public constant ADMIN_ADDRESS =
         0x7F585D7A9751a7388909Ed940E29732306A98f0c;
@@ -72,6 +75,17 @@ contract LandRegistry {
         string memory _state,
         uint256 _areaSqYd
     ) public {
+        // Create a unique hash of the land details to check for duplicates
+        bytes32 landHash = keccak256(
+            abi.encodePacked(_plotNumber, _district, _state)
+        );
+
+        // Check if a land with the same details already exists
+        require(
+            !landExists[landHash],
+            "Error: Land with these details is already registered"
+        );
+
         landCount++;
         lands[landCount] = Land(
             landCount,
@@ -85,6 +99,10 @@ contract LandRegistry {
             false,
             address(0)
         );
+
+        // Mark this land as existing
+        landExists[landHash] = true;
+
         ownerLands[msg.sender].push(landCount);
         landOwnershipHistory[landCount].push(
             OwnershipHistory(msg.sender, block.timestamp)

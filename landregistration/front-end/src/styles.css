@@ -156,6 +156,35 @@ body {
 .main-content {
   flex: 1;
 }
+
+footer {
+  margin-top: auto;
+}
+
+/* Footer styling enhancements */
+footer .hover-link:hover {
+  color: #007bff !important;
+  text-decoration: underline !important;
+  transition: all 0.3s;
+}
+
+footer .social-icon {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+footer .social-icon:hover {
+  transform: translateY(-3px);
+  color: #007bff !important;
+}
+
+footer h5 {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+footer hr.border-light {
+  opacity: 0.2;
+}
 /* Footer ends here */
 
 /* Responsive adjustments */
