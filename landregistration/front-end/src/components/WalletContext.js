@@ -3,6 +3,13 @@ import Web3 from 'web3';
 import LandRegistry from '../contracts/LandRegistry.json';
 import config from '../config';
 
+// Account names mapping - this is now moved to WalletContext for central management
+const accountNames = {
+  "0x7F585D7A9751a7388909Ed940E29732306A98f0c": "Admin",
+  "0x9Fa8A01E6005607B3BCbaEB2c0f4c39a73A9AFbE": "User 1",
+  "0xA8dCae3255147e26250F4b38f8dFfe3705F39F7a": "User 2",
+};
+
 export const WalletContext = createContext();
 
 export const WalletProvider = ({ children }) => {
@@ -10,9 +17,19 @@ export const WalletProvider = ({ children }) => {
   const [web3, setWeb3] = useState(null);
   const [contract, setContract] = useState(null);
   const [account, setAccount] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [networkError, setNetworkError] = useState('');
   
   console.log('WalletContext.js LOADED');
+
+  // Update account name whenever the account changes
+  useEffect(() => {
+    if (account) {
+      setAccountName(accountNames[account] || config.shortenAddress(account));
+    } else {
+      setAccountName('');
+    }
+  }, [account]);
 
   useEffect(() => {
     const initWeb3 = async () => {
@@ -74,6 +91,11 @@ export const WalletProvider = ({ children }) => {
         setAccount(accounts[0] || '');
         setIsConnected(!!accounts[0]);
         console.log('Accounts changed:', accounts);
+
+        // Fallback: Reload the page to ensure account name updates
+        if (accounts[0]) {
+          window.location.reload();
+        }
       });
 
       window.ethereum.on('chainChanged', () => {
@@ -103,14 +125,22 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
+  // Add a helper function to get name for any account
+  const getAccountName = (addr) => {
+    return accountNames[addr] || config.shortenAddress(addr);
+  };
+
   return (
     <WalletContext.Provider value={{ 
       isConnected, 
       web3, 
       contract, 
-      account, 
+      account,
+      accountName,
       connectWallet,
-      networkError
+      networkError,
+      getAccountName,
+      accountNames
     }}>
       {children}
     </WalletContext.Provider>

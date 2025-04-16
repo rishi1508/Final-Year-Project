@@ -4,6 +4,7 @@ import '../styles.css';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { WalletContext } from './WalletContext';
+import ConfirmationDialog from './ConfirmationDialog';
 
 // Define admin address as a constant to match LandRegistry.sol
 const ADMIN_ADDRESS = process.env.REACT_APP_ADMIN_ADDRESS;
@@ -16,6 +17,7 @@ const AdminPanel = () => {
   const [pastOwners, setPastOwners] = useState([]);
   const [landIdForHistory, setLandIdForHistory] = useState('');
   const [activeSection, setActiveSection] = useState(null);
+  const [showDialog, setShowDialog] = useState(false);
 
   const checkAdminStatus = useCallback(() => {
     if (!account) return;
@@ -202,6 +204,16 @@ const AdminPanel = () => {
                 </div>
               </div>
             )}
+            <ConfirmationDialog
+              show={showDialog}
+              title="Confirm Action"
+              message="Are you sure you want to perform this action?"
+              onConfirm={() => {
+                setShowDialog(false);
+                alert('Action confirmed!');
+              }}
+              onCancel={() => setShowDialog(false)}
+            />
           </div>
         )}
       </div>
